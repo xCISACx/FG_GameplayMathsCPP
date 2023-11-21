@@ -9,6 +9,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "FGGM_ChargeCameraShake.h"
+#include "Kismet/GameplayStatics.h"
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -56,6 +58,7 @@ void AFG_GameplayMathsCPPCharacter::StartCharging()
 	//UE_LOG(LogTemp, Warning, TEXT("STARTED CHARGING"));
 	bIsCharging = true;
 	TargetPower = MaxPower;
+	StartCameraShake();
 }
 
 void AFG_GameplayMathsCPPCharacter::StopCharging()
@@ -113,7 +116,7 @@ void AFG_GameplayMathsCPPCharacter::UpdatePower(float DeltaSeconds)
 	FLinearColor CurrentTint;
 	DynMaterial->GetVectorParameterValue(ParameterName, CurrentTint);
 	
-	UE_LOG(LogTemp, Warning, TEXT("Current Tint: %s"), *CurrentTint.ToString());
+	//UE_LOG(LogTemp, Warning, TEXT("Current Tint: %s"), *CurrentTint.ToString());
 }
 
 void AFG_GameplayMathsCPPCharacter::BeginPlay()
@@ -198,6 +201,16 @@ void AFG_GameplayMathsCPPCharacter::Look(const FInputActionValue& Value)
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+void AFG_GameplayMathsCPPCharacter::StartCameraShake()
+{
+	if (Controller)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SHAKE"));
+		// Start the camera shake
+		UGameplayStatics::GetPlayerCameraManager(this, 0)->StartCameraShake(UFGGM_ChargeCameraShake::StaticClass(), 1.0f);
 	}
 }
 

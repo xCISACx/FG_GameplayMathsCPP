@@ -63,6 +63,8 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	bool bIsCharging = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	float CurrentPower = 0.0f;
 	float MinPower = 0.0f;
 	float TargetPower = 0.0f;
@@ -81,7 +83,7 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-			
+	void StartCameraShake();
 
 protected:
 	// APawn interface
