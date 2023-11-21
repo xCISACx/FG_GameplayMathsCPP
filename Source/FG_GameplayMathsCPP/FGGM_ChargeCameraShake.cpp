@@ -3,7 +3,7 @@
 
 #include "FGGM_ChargeCameraShake.h"
 
-UFGGM_ChargeCameraShake::UFGGM_ChargeCameraShake()
+/*UFGGM_ChargeCameraShake::UFGGM_ChargeCameraShake()
 {
 	// Generate Perlin noise for the camera shake
 	float Rand = FMath::RandRange(15, 30);
@@ -16,7 +16,7 @@ UFGGM_ChargeCameraShake::UFGGM_ChargeCameraShake()
 	OscillationBlendOutTime = 0.2f;
 	/*RotOscillation.Pitch.Amplitude = NoiseX;
 	RotOscillation.Yaw.Amplitude = NoiseY;
-	RotOscillation.Roll.Amplitude = NoiseZ;*/
+	RotOscillation.Roll.Amplitude = NoiseZ;#1#
 	/*LocOscillation.X.Amplitude = 25.0f;
 	LocOscillation.X.Frequency = 1.0f;
 	LocOscillation.X.InitialOffset = EInitialOscillatorOffset::EOO_OffsetRandom;
@@ -25,11 +25,11 @@ UFGGM_ChargeCameraShake::UFGGM_ChargeCameraShake()
 	LocOscillation.Y.Amplitude = 15.0f;
 	LocOscillation.Y.Frequency = 5.0f;
 	LocOscillation.Y.InitialOffset = EInitialOscillatorOffset::EOO_OffsetRandom;
-	LocOscillation.Y.Waveform = EOscillatorWaveform::SineWave;*/
+	LocOscillation.Y.Waveform = EOscillatorWaveform::SineWave;#1#
 	
 	LocOscillation.Z.Amplitude = 0.5f;
 	LocOscillation.Z.Frequency = 10.0f;
 	LocOscillation.Z.InitialOffset = EInitialOscillatorOffset::EOO_OffsetRandom;
 	LocOscillation.Z.Waveform = EOscillatorWaveform::SineWave;
-}
+}*/
 

@@ -15,5 +15,5 @@ class FG_GAMEPLAYMATHSCPP_API UFGGM_ChargeCameraShake : public ULegacyCameraShak
 	GENERATED_BODY()
 
 public:
-	UFGGM_ChargeCameraShake();
+	//UFGGM_ChargeCameraShake();
 };
