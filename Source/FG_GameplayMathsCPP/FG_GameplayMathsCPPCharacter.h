@@ -50,6 +50,9 @@ class AFG_GameplayMathsCPPCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	FLinearColor ChargedTintColour;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Noise", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UFGGM_ChargeCameraShake> CameraShake;
+
 public:
 	AFG_GameplayMathsCPPCharacter();
 

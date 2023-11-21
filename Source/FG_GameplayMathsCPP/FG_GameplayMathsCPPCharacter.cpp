@@ -58,7 +58,7 @@ void AFG_GameplayMathsCPPCharacter::StartCharging()
 	//UE_LOG(LogTemp, Warning, TEXT("STARTED CHARGING"));
 	bIsCharging = true;
 	TargetPower = MaxPower;
-	StartCameraShake();
+	UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->StartCameraShake(CameraShake, 1.0f);
 }
 
 void AFG_GameplayMathsCPPCharacter::StopCharging()
@@ -132,6 +132,8 @@ void AFG_GameplayMathsCPPCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->StartCameraShake(UFGGM_ChargeCameraShake::StaticClass(), 1.0f);
 }
 
 void AFG_GameplayMathsCPPCharacter::Tick(float DeltaSeconds)
@@ -210,7 +212,7 @@ void AFG_GameplayMathsCPPCharacter::StartCameraShake()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("SHAKE"));
 		// Start the camera shake
-		UGameplayStatics::GetPlayerCameraManager(this, 0)->StartCameraShake(UFGGM_ChargeCameraShake::StaticClass(), 1.0f);
+		UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->StartCameraShake(UFGGM_ChargeCameraShake::StaticClass(), 1.0f);
 	}
 }
 
