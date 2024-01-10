@@ -65,7 +65,31 @@ public:
 
 	void StartCharging();
 	void ShootProjectile();
+	void StartCameraShake();
+	void StopCameraShake();
 	void StopCharging();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Shake")
+	float DefaultCameraShakeIntensity = 50.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Shake")
+	float CameraShakeIntensity = 50.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Shake")
+	float CameraShakeDuration = 1.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Shake")
+	float MinShakeX = 1.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Shake")
+	float MaxShakeX = 10.0f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Shake")
+	float MinShakeZ = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Camera Shake")
+	float MaxShakeZ = 10.0f;
+	
 
 private:
 	bool bDynamicMaterialCreated = false;
@@ -94,6 +118,8 @@ private:
 
 	AFGGM_Actor* SpawnedActor;
 	
+	FVector DefaultCameraLocation;
+	
 
 protected:
 
@@ -102,7 +128,6 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-	void StartCameraShake();
 
 protected:
 	// APawn interface

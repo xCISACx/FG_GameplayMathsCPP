@@ -54,16 +54,13 @@ AFG_GameplayMathsCPPCharacter::AFG_GameplayMathsCPPCharacter()
 	// Create an instance of UArrowComponent
 	FirePoint = CreateDefaultSubobject<UArrowComponent>(TEXT("FirePoint"));
 	FirePoint->SetupAttachment(RootComponent);
-
-	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
-	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
 
 void AFG_GameplayMathsCPPCharacter::StartCharging()
 {
 	// Set the spawn parameters
 	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;  // Set the owner if needed
+	SpawnParams.Owner = this;
 	SpawnParams.Instigator = GetInstigator();
 	
 	//UE_LOG(LogTemp, Warning, TEXT("STARTED CHARGING"));
@@ -76,7 +73,8 @@ void AFG_GameplayMathsCPPCharacter::StartCharging()
 		SpawnedActor->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 	}
 	TargetPower = MaxPower;
-	UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->StartCameraShake(CameraShake, 1.0f);
+
+	StartCameraShake();
 }
 
 void AFG_GameplayMathsCPPCharacter::StopCharging()
@@ -134,6 +132,7 @@ void AFG_GameplayMathsCPPCharacter::UpdatePower(float DeltaSeconds)
 
 			SpawnedActor->StaticMeshComponent->SetWorldScale3D(FMath::Lerp(OriginalScale, NewScale, DeltaSeconds / ChargeRate));
 		}
+		StartCameraShake();
 	}
 	else
 	{
@@ -165,6 +164,36 @@ void AFG_GameplayMathsCPPCharacter::ShootProjectile()
 		SpawnedActor->StaticMeshComponent->AddForce(LaunchForce);
 		SpawnedActor = nullptr;
 	}
+	
+	StopCameraShake();
+}
+
+void AFG_GameplayMathsCPPCharacter::StartCameraShake()
+{
+	UE_LOG(LogTemp, Warning, TEXT("SHAKE"));
+	
+	CameraShakeIntensity = DefaultCameraShakeIntensity;
+	
+	// Update Perlin noise values based on time
+	float RandX = FMath::RandRange(MinShakeX, MaxShakeX);
+	float RandZ = FMath::RandRange(MinShakeZ, MaxShakeZ);
+	float NoiseX = FMath::PerlinNoise3D(FVector(RandX, 0.0f, 0.0f));
+	float NoiseZ = FMath::PerlinNoise3D(FVector(0.0f, 0.0F, RandZ));
+
+	// Use Perlin noise to modify the camera location
+	FVector NewCameraLocation = DefaultCameraLocation;
+	NewCameraLocation.X += NoiseX * CameraShakeIntensity;
+	NewCameraLocation.Z += NoiseZ * CameraShakeIntensity;
+
+	// Set the modified camera location
+	CameraBoom->SetRelativeLocation(NewCameraLocation);
+}
+
+void AFG_GameplayMathsCPPCharacter::StopCameraShake()
+{
+	GetCameraBoom()->SetRelativeLocation(DefaultCameraLocation);
+	
+	CameraShakeIntensity = 0.0f;
 }
 
 void AFG_GameplayMathsCPPCharacter::BeginPlay()
@@ -182,6 +211,8 @@ void AFG_GameplayMathsCPPCharacter::BeginPlay()
 	}
 
 	UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->StartCameraShake(UFGGM_ChargeCameraShake::StaticClass(), 1.0f);
+
+	DefaultCameraLocation = GetCameraBoom()->GetRelativeLocation();
 }
 
 void AFG_GameplayMathsCPPCharacter::Tick(float DeltaSeconds)
@@ -256,16 +287,6 @@ void AFG_GameplayMathsCPPCharacter::Look(const FInputActionValue& Value)
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
-	}
-}
-
-void AFG_GameplayMathsCPPCharacter::StartCameraShake()
-{
-	if (Controller)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("SHAKE"));
-		// Start the camera shake
-		UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->StartCameraShake(UFGGM_ChargeCameraShake::StaticClass(), 1.0f);
 	}
 }
 
