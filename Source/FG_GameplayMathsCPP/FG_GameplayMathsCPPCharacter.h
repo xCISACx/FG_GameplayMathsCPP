@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "FGGM_Actor.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h"
 #include "FG_GameplayMathsCPPCharacter.generated.h"
@@ -41,6 +42,9 @@ class AFG_GameplayMathsCPPCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* ChargeAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	class UInputAction* ReleaseChargeAction;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Input, meta = (AllowPrivateAccess = "true"))
 	FName ParameterName = "Tint";
 
@@ -53,10 +57,14 @@ class AFG_GameplayMathsCPPCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Noise", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<UCameraShakeBase> CameraShake;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay, meta = (AllowPrivateAccess = "true"))
+	float LaunchSpeed;
+
 public:
 	AFG_GameplayMathsCPPCharacter();
 
 	void StartCharging();
+	void ShootProjectile();
 	void StopCharging();
 
 private:
@@ -77,6 +85,14 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	float ChargeRate = 0.2f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AFGGM_Actor> ProjectileActorClass;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Shooting, meta = (AllowPrivateAccess = "true"))
+	UArrowComponent* FirePoint;
+
+	AFGGM_Actor* SpawnedActor;
 	
 
 protected:

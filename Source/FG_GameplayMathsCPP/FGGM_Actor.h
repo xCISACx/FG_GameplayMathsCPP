@@ -64,6 +64,8 @@ public:
 
 	FVector AABBMin;
 	FVector AABBMax;
+
+	FVector DirectionVectorToOtherActor;
 	
 protected:
 	virtual void BeginPlay() override;

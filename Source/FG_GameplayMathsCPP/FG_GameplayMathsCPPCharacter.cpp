@@ -9,7 +9,9 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "FGGM_Actor.h"
 #include "FGGM_ChargeCameraShake.h"
+#include "Components/ArrowComponent.h"
 #include "Kismet/GameplayStatics.h"
 
 
@@ -49,21 +51,38 @@ AFG_GameplayMathsCPPCharacter::AFG_GameplayMathsCPPCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	// Create an instance of UArrowComponent
+	FirePoint = CreateDefaultSubobject<UArrowComponent>(TEXT("FirePoint"));
+	FirePoint->SetupAttachment(RootComponent);
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
 
 void AFG_GameplayMathsCPPCharacter::StartCharging()
 {
+	// Set the spawn parameters
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;  // Set the owner if needed
+	SpawnParams.Instigator = GetInstigator();
+	
 	//UE_LOG(LogTemp, Warning, TEXT("STARTED CHARGING"));
 	bIsCharging = true;
+	if (!SpawnedActor)
+	{
+		// Spawn the actor
+		SpawnedActor = GetWorld()->SpawnActor<AFGGM_Actor>(ProjectileActorClass, FirePoint->GetComponentLocation(), GetActorRotation(), SpawnParams);
+		SpawnedActor->StaticMeshComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+		SpawnedActor->AttachToActor(this, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	}
 	TargetPower = MaxPower;
 	UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0)->StartCameraShake(CameraShake, 1.0f);
 }
 
 void AFG_GameplayMathsCPPCharacter::StopCharging()
 {
-	//UE_LOG(LogTemp, Warning, TEXT("STOPPED CHARGING"));
+	ShootProjectile();
+	UE_LOG(LogTemp, Warning, TEXT("STOPPED CHARGING"));
 	bIsCharging = false;
 	TargetPower = 0;
 }
@@ -103,10 +122,27 @@ void AFG_GameplayMathsCPPCharacter::UpdatePower(float DeltaSeconds)
 	{
 		//UE_LOG(LogTemp, Warning, TEXT("CHARGING"));
 		CurrentPower = FMath::Lerp(CurrentPower, TargetPower, DeltaSeconds / ChargeRate);
+		
+		if (SpawnedActor)
+		{
+			FVector OriginalScale = SpawnedActor->GetActorScale();
+			FVector NewScale = FVector(
+				FMath::Clamp(OriginalScale.X, 0.2f, OriginalScale.X * (CurrentPower * 2.0f)),
+				FMath::Clamp(OriginalScale.Y, 0.2f, OriginalScale.Y * (CurrentPower * 2.0f)),
+				FMath::Clamp(OriginalScale.Z, 0.2f, OriginalScale.Z * (CurrentPower * 2.0f))
+			);
+
+			SpawnedActor->StaticMeshComponent->SetWorldScale3D(FMath::Lerp(OriginalScale, NewScale, DeltaSeconds / ChargeRate));
+		}
 	}
 	else
 	{
 		CurrentPower = FMath::Lerp(CurrentPower, MinPower, DeltaSeconds / ChargeRate);
+	}
+
+	if (CurrentPower >= MaxPower)
+	{
+		StopCharging();
 	}
 
 	FLinearColor NewColour = FMath::Lerp(NeutralTintColour, ChargedTintColour, CurrentPower);
@@ -117,6 +153,18 @@ void AFG_GameplayMathsCPPCharacter::UpdatePower(float DeltaSeconds)
 	DynMaterial->GetVectorParameterValue(ParameterName, CurrentTint);
 	
 	//UE_LOG(LogTemp, Warning, TEXT("Current Tint: %s"), *CurrentTint.ToString());
+}
+
+void AFG_GameplayMathsCPPCharacter::ShootProjectile()
+{
+	if (SpawnedActor)
+	{
+		// Apply force to the projectile
+		FVector LaunchDirection = GetActorForwardVector(); // Change this to the desired launch direction
+		FVector LaunchForce = LaunchDirection * LaunchSpeed;
+		SpawnedActor->StaticMeshComponent->AddForce(LaunchForce);
+		SpawnedActor = nullptr;
+	}
 }
 
 void AFG_GameplayMathsCPPCharacter::BeginPlay()
@@ -141,6 +189,11 @@ void AFG_GameplayMathsCPPCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	UpdatePower(DeltaSeconds);
+
+	if (SpawnedActor)
+	{
+		SpawnedActor->SetActorLocation(FirePoint->GetComponentLocation());
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -163,8 +216,8 @@ void AFG_GameplayMathsCPPCharacter::SetupPlayerInputComponent(class UInputCompon
 
 		//Charging
 		EnhancedInputComponent->BindAction(ChargeAction, ETriggerEvent::Triggered, this, &AFG_GameplayMathsCPPCharacter::StartCharging);
-		EnhancedInputComponent->BindAction(ChargeAction, ETriggerEvent::Canceled, this, &AFG_GameplayMathsCPPCharacter::StopCharging);
-		EnhancedInputComponent->BindAction(ChargeAction, ETriggerEvent::Completed, this, &AFG_GameplayMathsCPPCharacter::StopCharging);
+		EnhancedInputComponent->BindAction(ReleaseChargeAction, ETriggerEvent::Triggered, this, &AFG_GameplayMathsCPPCharacter::StopCharging);
+		//EnhancedInputComponent->BindAction(ChargeAction, ETriggerEvent::Completed, this, &AFG_GameplayMathsCPPCharacter::StopCharging);
 
 	}
 

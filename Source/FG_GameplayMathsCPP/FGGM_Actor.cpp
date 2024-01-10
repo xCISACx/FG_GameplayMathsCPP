@@ -82,7 +82,7 @@ void AFGGM_Actor::Tick(float DeltaTime)
 	{
 		if (Actor != this)
 		{
-			// Calculate the distance between the current actor and your reference actor (this)
+			// Calculate the distance between the current actor and this actor
 			float Distance = FVector::Dist(Actor->GetActorLocation(), GetActorLocation());
 
 			if (Distance <= DetectionRadius)
@@ -106,6 +106,10 @@ void AFGGM_Actor::Tick(float DeltaTime)
 					}
 				}
 			}
+			else
+			{
+				DirectionVectorToOtherActor = FVector::ZeroVector;
+			}
 		}
 		
 	}
@@ -126,7 +130,7 @@ bool AFGGM_Actor::CheckCollisionWith(const AFGGM_Actor* OtherActor) const
 			OtherActorAABBMax = OtherActor->GetActorLocation() + OtherActor->AABBHalfExtents;
 			break;
 
-		//case Shape::Sphere:
+		case Shape::Sphere:
 			OtherActorAABBMin = OtherActor->GetActorLocation() - FVector(OtherActor->Radius);
 			OtherActorAABBMax = OtherActor->GetActorLocation() + FVector(OtherActor->Radius);
 			break;
@@ -150,6 +154,8 @@ bool AFGGM_Actor::CheckCollisionWith(const AFGGM_Actor* OtherActor) const
 
 void AFGGM_Actor::HandleCollisionWith(AFGGM_Actor* OtherActor)
 {
+	DirectionVectorToOtherActor = FVector::Zero();
+	
 	FString ActorName = GetActorNameOrLabel();
 	FString OtherActorName = OtherActor->GetActorNameOrLabel();
 
@@ -164,7 +170,6 @@ void AFGGM_Actor::HandleCollisionWith(AFGGM_Actor* OtherActor)
 	{
 		CheckDirectionTo(OtherActor);
 	}
-	CheckDirectionTo(OtherActor);
 }
 
 void AFGGM_Actor::CheckDirectionTo(AFGGM_Actor* OtherActor)
@@ -182,47 +187,192 @@ void AFGGM_Actor::CheckDirectionTo(AFGGM_Actor* OtherActor)
 	float TimeToDisplay = 3.0f;
 	FColor DebugTextColor = FColor::Yellow;
 	FString DebugText = FString::Printf(TEXT("%s is "), *OtherActorName);
+	FString XText;
+	FString YText;
+	FString ZText;
 
-	if (DotProduct >= 0.707)
+	DirectionVectorToOtherActor = FVector::ZeroVector;
+
+	// if the dot product is nearly zero, we aren't in front or behind. We are at the same Y value (Y/forward axis)
+	if (FMath::IsNearlyZero(DotProduct))
+{
+    // if the cross product on the Y axis is different from 0, we are either above or below (Z/up axis)
+    if (CrossProduct.Y != 0)
+    {
+        // not directly above or below
+        if (CrossProduct.Y != 1 && CrossProduct.Y != -1)
+        {
+            if (CrossProduct.Y > 0)
+            {
+            	ZText = TEXT("BELOW");
+                //DebugText.Append(TEXT("BELOW"));
+                DirectionVectorToOtherActor.Z = -1;
+            }
+            else if (CrossProduct.Y < 0)
+            {
+            	ZText = TEXT("ABOVE");
+                //DebugText.Append(TEXT("ABOVE"));
+                DirectionVectorToOtherActor.Z = 1;
+            }
+        }
+        // directly above or below
+        else
+        {
+            if (CrossProduct.Y == 1)
+            {
+            	ZText = TEXT("BELOW");
+                //DebugText.Append(TEXT("DIRECTLY BELOW"));
+                DirectionVectorToOtherActor.Z = -1;
+            }
+            else if (CrossProduct.Y == -1)
+            {
+            	ZText = TEXT("ABOVE");
+                //DebugText.Append(TEXT("DIRECTLY ABOVE"));
+                DirectionVectorToOtherActor.Z = 1;
+            }
+        }
+        if (CrossProduct.Z > 0)
+        {
+        	XText = TEXT("to the RIGHT of");
+            //DebugText.Append(TEXT(" and to the RIGHT"));
+            DirectionVectorToOtherActor.X = 1;
+        }
+        else if (CrossProduct.Z < 0)
+        {
+        	XText = TEXT("to the LEFT of");
+            //DebugText.Append(TEXT(" and to the LEFT"));
+            DirectionVectorToOtherActor.X = -1;
+        }
+    }
+    
+    // if the cross product on the Z axis is different from 0, we are either to the left or to the right (X/right axis)
+    if (CrossProduct.Z != 0)
+    {
+        if (CrossProduct.Z == 1)
+        {
+        	XText = TEXT("DIRECTLY to the RIGHT of");
+            //DebugText.Append(TEXT("DIRECTLY to the RIGHT"));
+            DirectionVectorToOtherActor.X = 1;
+        }
+        else if (CrossProduct.Z == -1)
+        {
+        	XText = TEXT("DIRECTLY to the LEFT of");
+            //DebugText.Append(TEXT("DIRECTLY to the LEFT"));
+            DirectionVectorToOtherActor.X = -1;
+        }
+    }
+}
+	// if the dot product is NOT nearly zero, we are in front or behind
+	else
 	{
-		DebugText.Append(TEXT("IN FRONT"));
+		// we are in front
+		if (DotProduct > 0)
+		{
+			YText = TEXT("IN FRONT of");
+			//DebugText.Append(TEXT("IN FRONT"));
+			DirectionVectorToOtherActor.Y = 1;
 
-		if (CrossProduct.Z > 0)
-		{
-			DebugText.Append(TEXT(" and to the RIGHT of"));
+			if (CrossProduct.Z > 0)
+			{
+				XText = TEXT("to the RIGHT of");
+				//DebugText.Append(TEXT(" and to the RIGHT"));
+				DirectionVectorToOtherActor.X = 1;
+			}
+			else if (CrossProduct.Z < 0)
+			{
+				XText = TEXT("to the LEFT of");
+				//DebugText.Append(TEXT(" and to the LEFT"));
+				DirectionVectorToOtherActor.X = -1;
+			}
+
+			if (CrossProduct.Y > 0)
+			{
+				ZText = TEXT("BELOW");
+				//DebugText.Append(TEXT(" and BELOW"));
+				DirectionVectorToOtherActor.Z = -1;
+			}
+			else if (CrossProduct.Y < 0)
+			{
+				ZText = TEXT("ABOVE");
+				//DebugText.Append(TEXT(" and ABOVE"));
+				DirectionVectorToOtherActor.Z = 1;
+			}
 		}
-		else if (CrossProduct.Z < 0)
+		// we are behind
+		else if (DotProduct < 0)
 		{
-			DebugText.Append(TEXT(" and to the LEFT of"));
+			YText = TEXT("BEHIND");
+			//DebugText.Append(TEXT("BEHIND"));
+			DirectionVectorToOtherActor.Y = -1;
+
+			if (CrossProduct.Z > 0)
+			{
+				XText = TEXT("to the RIGHT of");
+				//DebugText.Append(TEXT(" and to the RIGHT of"));
+				DirectionVectorToOtherActor.X = 1;
+			}
+			else if (CrossProduct.Z < 0)
+			{
+				XText = TEXT("to the LEFT of");
+				//DebugText.Append(TEXT(" and to the LEFT of"));
+				DirectionVectorToOtherActor.X = -1;
+			}
+
+			if (CrossProduct.Y > 0)
+			{
+				ZText = TEXT("BELOW");
+				//DebugText.Append(TEXT(" and BELOW"));
+				DirectionVectorToOtherActor.Z = -1;
+			}
+			else if (CrossProduct.Y < 0)
+			{
+				ZText = TEXT("ABOVE");
+				//DebugText.Append(TEXT(" and ABOVE"));
+				DirectionVectorToOtherActor.Z = 1;
+			}
 		}
 	}
-	else if (DotProduct <= -0.707)
+	
+	DebugText.Append(XText);
+
+	if (!XText.IsEmpty())
 	{
-		DebugText.Append(TEXT("BEHIND"));
-		
-		if (CrossProduct.Z > 0)
+		if (!YText.IsEmpty())
 		{
-			DebugText.Append(TEXT(" and to the RIGHT of"));
+			DebugText.Append(!ZText.IsEmpty() ? TEXT(", ") : TEXT(" and "));
 		}
-		else if (CrossProduct.Z < 0)
+		else if (!ZText.IsEmpty())
 		{
-			DebugText.Append(TEXT(" and to the LEFT of"));
+			DebugText.Append(TEXT(" and "));
 		}
-	}
-	else if (DotProduct == 0)
-	{
-		DebugText.Append(TEXT("INSIDE"));
 	}
 
+	DebugText.Append(YText);
+
+	if (!YText.IsEmpty() && !ZText.IsEmpty())
+	{
+		DebugText.Append(TEXT(" and "));
+	}
+
+	DebugText.Append(ZText);
+	
 	DebugText.Append(FString::Printf(TEXT(" %s"), *ActorName));
 	FString FormattedDebugMessage = FString::Printf(TEXT("%s"), *DebugText);
-	FString FormattedDotProductMessage = FString::Printf(TEXT("%f"), DotProduct);
+	FString FormattedDotProductMessage = FString::Printf(TEXT("Dot: %f"), DotProduct);
+	FString FormattedCrossProductMessage = FString::Printf(TEXT("Cross: %f, %f, %f"), CrossProduct.X, CrossProduct.Y, CrossProduct.Z);
+	FString FormattedCrossProductLengthMessage = FString::Printf(TEXT("Cross Length: %f"), CrossProduct.Length());
+	FString FormattedDirectionVectorMessage = FString::Printf(TEXT("Direction Vector: X=%f, Y=%f, Z=%f"), DirectionVectorToOtherActor.X, DirectionVectorToOtherActor.Y, DirectionVectorToOtherActor.Z);
 
 	if (!FormattedDebugMessage.IsEmpty())
 	{
-		GEngine->AddOnScreenDebugMessage(-1, TimeToDisplay, DebugTextColor, FormattedDotProductMessage);
 		GEngine->AddOnScreenDebugMessage(-1, TimeToDisplay, DebugTextColor, FormattedDebugMessage);
 	}
+
+	GEngine->AddOnScreenDebugMessage(-1, TimeToDisplay, DebugTextColor, FormattedDotProductMessage);
+	GEngine->AddOnScreenDebugMessage(-1, TimeToDisplay, DebugTextColor, FormattedCrossProductMessage);
+	GEngine->AddOnScreenDebugMessage(-1, TimeToDisplay, DebugTextColor, FormattedCrossProductLengthMessage);
+	GEngine->AddOnScreenDebugMessage(-1, TimeToDisplay, DebugTextColor, FormattedDirectionVectorMessage);
+
 }
 
 
